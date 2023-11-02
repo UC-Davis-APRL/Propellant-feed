@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+hello
+
+
 def variablesFunc():
     #Input Variables
     massFlow = float(input("Enter Mass Flow Rate (kg/s): "))
