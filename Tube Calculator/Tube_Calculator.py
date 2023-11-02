@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+#test
 
 def variablesFunc():
     #Input Variables
@@ -12,18 +13,19 @@ def variablesFunc():
     
     #Calculated Variables
     areaRange = np.array(np.square((diamRange / 2)) * np.pi)
-    velocityRange = np.array(np.divide(([massFlow] * len(diamRange)), areaRange * density))
+    velocityRange = np.array(np.divide((massFlow), (areaRange * density)))
     reynoldsRange = np.array((density * velocityRange * diamRange) / viscosity)
     
     #Friction Factor Calculation
     frictionFactorRange = np.empty(len(diamRange))
-    for i in np.arange(0, len(frictionFactorRange) - 1, 1):
+    for i in np.arange(0, len(frictionFactorRange), 1):
         if reynoldsRange[i] <= 2000:
             frictionFactorRange[i] = 64 / reynoldsRange[i]
         elif reynoldsRange[i] < 4000:
             frictionFactorRange[i] = 64 / reynoldsRange[i] #should be replaced with whatever actually happens at transitional flow
         elif reynoldsRange[i] >= 4000:
-            frictionFactorRange[i] = colebrookSolver(reynoldsRange[i], roughness, diamRange[i])
+            frictionFactorRange[i] = haaland(reynoldsRange[i], roughness, diamRange[i])
+            #frictionFactorRange[i] = colebrookSolver(reynoldsRange[i], roughness, diamRange[i])
     
     #For debugging
     #print(f"Diameters: {diamRange} \n")
@@ -31,6 +33,8 @@ def variablesFunc():
     #print(f"Velocity: {velocityRange} \n")
     fig, ax = plt.subplots()
     varPlot = ax.plot(reynoldsRange, frictionFactorRange)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
     plt.show()
 
     return frictionFactorRange, density, velocityRange, diamRange, straightLength
@@ -53,5 +57,8 @@ def straightDarcyWeisbach():
     f, rho, u_avg, D, L = variablesFunc()
     Pdrop = f * L * (rho/2) * np.divide(np.square(u_avg), D)
     return Pdrop
+
+def haaland(Re, e, D):
+    return np.power((1/(-1.8 * np.log10(np.power((e/D)/3.7, 1.11) + (6.9/Re)))), 2)
 
 straightDarcyWeisbach() 
