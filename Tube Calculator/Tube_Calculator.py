@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import fluids as fl
+import pint
 
 
 def variablesFunc():
@@ -31,6 +33,11 @@ def variablesFunc():
     #print(f"Diameters: {diamRange} \n")
     #print(f"Area: {areaRange} \n")
     #print(f"Velocity: {velocityRange} \n")
+    fig, ax = plt.subplots()
+    varPlot = ax.plot(reynoldsRange, frictionFactorRange)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    plt.show()
 
     return frictionFactorRange, density, velocityRange, diamRange, straightLength
 
@@ -51,16 +58,9 @@ def colebrookSolver(Re, e, D, tolerance=1e-6, maxIterations=100):
 def straightDarcyWeisbach():
     f, rho, u_avg, D, L = variablesFunc()
     Pdrop = f * L * (rho/2) * np.divide(np.square(u_avg), D)
-
-    #plots pressure drop against diameter
-    fig, ax = plt.subplots()
-    varPlot = ax.plot(D, Pdrop)
-    ax.set_xscale('linear')
-    ax.set_yscale('linear')
-    plt.show()
     return Pdrop
 
 def haaland(Re, e, D):
     return np.power((1/(-1.8 * np.log10(np.power((e/D)/3.7, 1.11) + (6.9/Re)))), 2)
 
-straightDarcyWeisbach()
+straightDarcyWeisbach() 
