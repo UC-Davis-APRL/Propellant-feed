@@ -35,3 +35,6 @@ def tankHeight(radius, propellantVolume):
 keroTankHeight = tankHeight(radiusIn,volume_kero)
 loxTankHeight = tankHeight(radiusIn,volume_LOX)
 
+print(loxTankHeight)
+
+#yeet
