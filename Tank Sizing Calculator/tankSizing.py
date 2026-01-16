@@ -62,11 +62,12 @@ print("LOX Tank Pressure: " + str(round(loxTankPressure/6894.76,2)) + " psi")
 print("Kero Tank Pressure: " + str(round(keroTankPressure/6894.76,2)) + " psi")
 
 volFlow_kero = massflow_kero/density_kero #m^3/s
-volFlow_LOX = massflow_LOX/density_LOX
+volFlow_LOX = massflow_LOX/density_LOX #m^3/s
 
-print(volFlow_kero)
-print(volFlow_LOX)
-
-#isothermal nitrogen flow in lox tank assumed
+#isothermal nitrogen flow in both tanks assumed
 SCFM_nitrogen_LOX_side = volFlow_LOX * loxTankPressure/(101325) * 2118.88 #convert to standard cubic feet per minute
 SCFM_nitrogen_Kero_side = volFlow_kero * keroTankPressure/(101325) * 2118.88 
+
+####################################
+#regulator flow curve interpolation#
+####################################
