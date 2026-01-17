@@ -1,25 +1,25 @@
 import numpy as np
 import math
 import time
+from scipy.optimize import fsolve
 
 #constants and variables
 burntime = 10 # seconds
-ullageRatio = 1.15 # percentage of tank that is ullage
 p_chamber = 360 #psi
 OF = 1.4
+massflow = 1.032 #kg/s
 
-density_LOX = 1141 #kg/m^3
+ullageRatio = 1.15 # percentage of tank that is ullage
+density_LOX = 1097 #kg/m^3
 density_kero = 820 #kg/m^3
 volume_N2 = 9 * 0.001 #m^3
 
-massflow = 1.862805164 #kg/s
 
 massflow_kero = massflow / (OF + 1)
 massflow_LOX = massflow / (1/OF + 1)
 
 combined_CDA_LOX = 1.827e-4 * 0.092903 #experimental data converted from ft^2 to m^2 on ALI stand
 combined_CDA_kero = 1.486e-4 * 0.092903 
-
 
 
 def propVolumeCalc(burntime, massflow, ullageRatio, density):
@@ -55,6 +55,7 @@ def pressFromCDA(mdot, rho, p_downstream, CDA):
     return (mdot/CDA)**2 / (2*rho) + p_downstream
 
 p_chamber_PA = p_chamber * 6894.76 #convert to pascals
+
 loxTankPressure = pressFromCDA(massflow_LOX,density_LOX,p_chamber_PA,combined_CDA_LOX) #pascals
 keroTankPressure = pressFromCDA(massflow_LOX/OF,density_kero,p_chamber_PA,combined_CDA_kero) #pascals
 
@@ -68,6 +69,67 @@ volFlow_LOX = massflow_LOX/density_LOX #m^3/s
 SCFM_nitrogen_LOX_side = volFlow_LOX * loxTankPressure/(101325) * 2118.88 #convert to standard cubic feet per minute
 SCFM_nitrogen_Kero_side = volFlow_kero * keroTankPressure/(101325) * 2118.88 
 
+
 ####################################
 #regulator flow curve interpolation#
+###Functions estimated in Desmos####
 ####################################
+
+def getInlet415(Pdownstream,volumetricFlow):
+    def func415(x, *args):
+        Pdownstream, volumetric_flow = args
+        return np.sqrt((0.00134667*x**2 - 11.39333 * x + 1060) * volumetric_flow + (0.12664*x**2 + 298.12 * x -114120)) + 0.0000285296*x**2 + 0.440726 * x - Pdownstream
+    
+    initGuess = 5000
+    args = (Pdownstream,volumetricFlow)
+    root, info, status, msg = fsolve(func415, initGuess,args=args,full_output=True)
+    return root
+
+def getInlet873(Pdownstream,volumetricFlow):
+    def func873(x, *args):
+        Pdownstream, volumetric_flow = args
+        return np.sqrt((-0.000233333*x**2 - 0.243333*x - 170) * volumetric_flow + (0.4336*x**2 - 411.2*x + 161200)) - 0.0000459938*x**2 + 0.548679*x - Pdownstream
+
+    initGuess = 5000
+    args = (Pdownstream,volumetricFlow)
+    root, info, status, msg = fsolve(func873, initGuess,args=args,full_output=True)
+    return root
+
+upstreamLOXPress = getInlet873(loxTankPressure/6894.76,SCFM_nitrogen_LOX_side)[0]
+upstreamKeroPress = getInlet873(keroTankPressure/6894.76,SCFM_nitrogen_Kero_side)[0] 
+
+#print("upstream lox pressure: " + str(upstreamLOXPress))
+#print(f"upstream kero pressure: {upstreamKeroPress}")
+
+def RK(pressure,temperature):
+    def func(x,*args):
+        a, b, P, T = args
+        R = 8.3144
+        return ((R * T) / (x - b)) - (a/(np.sqrt(T) * x*(x+b))) - P
+
+    a_nitrogen = 1.553 
+    b_nitrogen = 2.677e-5
+
+    args = a_nitrogen,b_nitrogen,pressure,temperature
+
+    initGuess = 0.01
+    molarVolume, info, status, msg = fsolve(func,initGuess,args=args,full_output=True)
+
+    return molarVolume[0]
+
+#end state
+molsN2Tank = volume_N2 / RK(max(upstreamKeroPress*6894.76,upstreamLOXPress*6894.76),298)
+molsKeroTank = volume_kero / RK(keroTankPressure,298)
+molsLOXTank = volume_LOX / RK(loxTankPressure,90)#isothermal assumption may not be correct and we may need to use a lower temperature
+
+totalMols = molsKeroTank + molsLOXTank + molsN2Tank
+
+R = 8.3145
+T = 298
+v = volume_N2/totalMols
+a_nitrogen = 1.553 
+b_nitrogen = 2.677e-5
+
+N2TankPressure = (R*T)/(v - b_nitrogen) - a_nitrogen/(v*(v+b_nitrogen)*np.sqrt(T))
+
+print("Nitrogen Tank Pressure: " + str(round(N2TankPressure/6894.76,2)) + " psi")
