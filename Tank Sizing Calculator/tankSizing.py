@@ -66,9 +66,10 @@ volFlow_kero = massflow_kero/density_kero #m^3/s
 volFlow_LOX = massflow_LOX/density_LOX #m^3/s
 
 #isothermal nitrogen flow in both tanks assumed
-SCFM_nitrogen_LOX_side = volFlow_LOX * loxTankPressure/(101325) * 2118.88 #convert to standard cubic feet per minute
+SCFM_nitrogen_LOX_side = volFlow_LOX * loxTankPressure/(101325) *3* 2118.88 #convert to standard cubic feet per minute
 SCFM_nitrogen_Kero_side = volFlow_kero * keroTankPressure/(101325) * 2118.88 
 
+print(SCFM_nitrogen_LOX_side)
 
 ####################################
 #regulator flow curve interpolation#
@@ -98,8 +99,9 @@ def getInlet873(Pdownstream,volumetricFlow):
 upstreamLOXPress = getInlet873(loxTankPressure/6894.76,SCFM_nitrogen_LOX_side)[0]
 upstreamKeroPress = getInlet873(keroTankPressure/6894.76,SCFM_nitrogen_Kero_side)[0] 
 
-#print("upstream lox pressure: " + str(upstreamLOXPress))
-#print(f"upstream kero pressure: {upstreamKeroPress}")
+
+print("upstream lox pressure: " + str(upstreamLOXPress))
+print(f"upstream kero pressure: {upstreamKeroPress}")
 
 def RK(pressure,temperature):
     def func(x,*args):
@@ -125,10 +127,10 @@ prevN2TankPressure = 0
 k = 1.4
 counter = 0
 
-while converganceDiff > 1 or counter < 100:
+while converganceDiff > 0.001:
 
     N2TankTempFinal = 298 * (N2TankPressureFinal/N2TankPressureInit) ** (1-(1/k))
-    print(N2TankTempFinal)
+    #print(N2TankTempFinal)
     molsN2Tank = volume_N2 / RK(N2TankPressureFinal,N2TankTempFinal)
     molsKeroTank = volume_kero / RK(keroTankPressure,298)
     molsLOXTank = volume_LOX / RK(loxTankPressure,90)#isothermal assumption may not be correct and we may need to use a lower temperature
