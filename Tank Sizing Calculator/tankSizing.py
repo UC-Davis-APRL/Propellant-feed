@@ -4,7 +4,7 @@ import time
 from scipy.optimize import fsolve
 
 #constants and variables
-burntime = 10 # seconds
+burntime = 14 # seconds
 p_chamber = 360 #psi
 OF = 1.4
 massflow = 1.83 #kg/s
@@ -12,7 +12,7 @@ massflow = 1.83 #kg/s
 ullageRatio = 1.15 # percentage of tank that is ullage
 density_LOX = 1097 #kg/m^3
 density_kero = 820 #kg/m^3
-volume_N2 = 9 * 0.001 #m^3
+volume_N2 = 12 * 0.001 #m^3
 
 
 massflow_kero = massflow / (OF + 1)
@@ -89,9 +89,9 @@ def getInlet415(Pdownstream,volumetricFlow):
 def getInlet873(Pdownstream,volumetricFlow):
     def func873(x, *args):
         Pdownstream, volumetric_flow = args
-        return np.sqrt((-0.000233333*x**2 - 0.243333*x - 170) * volumetric_flow + (0.4336*x**2 - 411.2*x + 161200)) - 0.0000459938*x**2 + 0.548679*x - Pdownstream
+        return np.sqrt((0.00000933333*x**2 - 1.14867*x + 222) * volumetric_flow + (0.3336*x**2 - 1.2*x -18800)) - 0.0000189533*x**2 + 0.456093*x - Pdownstream
 
-    initGuess = 5000
+    initGuess = 1000
     args = (Pdownstream,volumetricFlow)
     root, info, status, msg = fsolve(func873, initGuess,args=args,full_output=True)
     return root
@@ -133,7 +133,7 @@ while converganceDiff > 0.001:
     #print(N2TankTempFinal)
     molsN2Tank = volume_N2 / RK(N2TankPressureFinal,N2TankTempFinal)
     molsKeroTank = volume_kero / RK(keroTankPressure,298)
-    molsLOXTank = volume_LOX / RK(loxTankPressure,90)#isothermal assumption may not be correct and we may need to use a lower temperature
+    molsLOXTank = volume_LOX / RK(loxTankPressure,90)#isothermal assumption may not be correct and we may need to use a higher
 
     totalMols = molsKeroTank + molsLOXTank + molsN2Tank
 
@@ -148,8 +148,11 @@ while converganceDiff > 0.001:
     prevN2TankPressure = N2TankPressureInit
     counter += 1
 
+print(f"interations: {counter}")
 
 print("Nitrogen Tank Pressure: " + str(round(N2TankPressureInit/6894.76,2)) + " psi")
 
-print(volume_kero / RK(keroTankPressure,298))
-print(volume_LOX / RK(loxTankPressure,90))#isothermal assumption may not be correct and we may need to use a lower temperature)
+print(f"lox tank pressure: {loxTankPressure/6894.76}")
+print(f"scfm of lox side nitrogen: {SCFM_nitrogen_LOX_side}")
+#print(volume_kero / RK(keroTankPressure,298))
+#print(volume_LOX / RK(loxTankPressure,90))#isothermal assumption may not be correct and we may need to use a lower temperature)
